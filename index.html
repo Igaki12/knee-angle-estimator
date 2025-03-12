@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <title>MediaPipe Pose Knee Angle Estimator</title>
+  <style>
+    /* 全体の背景・フォント・中央揃え・レスポンシブ対応 */
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background-color: #fbd3a6;
+      /* 温かみのある淡い背景色 */
+      color: #3f1a00;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+      /* 中央揃え */
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* コンテナ：画像やcanvasの表示領域 */
+    .container {
+      position: relative;
+      display: inline-block;
+      max-width: 100%;
+      margin-bottom: 20px;
+    }
+
+    /* アップロードされた画像とcanvasを重ねるためのスタイル */
+    .container img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      border: 4px solid #ffcc99;
+      /* 温かみのあるボーダー */
+      border-radius: 8px;
+    }
+
+    .canvas-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      /* canvas上のクリックを画像へ伝える */
+    }
+
+    /* ダウンロードボタンのデザイン */
+    #downloadButton {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: #ff9966;
+      /* 温かいオレンジ系の色 */
+      color: white;
+      text-decoration: none;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s;
+      display: inline-block;
+    }
+
+    #downloadButton:hover {
+      background: #ff7f50;
+    }
+
+    /* Pulseアニメーション定義 */
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.05);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .pulse {
+      animation: pulse 1s infinite;
+      animation-iteration-count: 3;
+    }
+
+    /* テーブルのスタイル（レスポンシブ対応） */
+    table {
+      width: 90%;
+      margin: 20px auto;
+      border-collapse: collapse;
+    }
+
+    table,
+    th,
+    td {
+      border: 2px solid #ffffff;
+    }
+    th {
+      background-color: #2e0f00;
+      /* 温かいオレンジ系の色 */
+      color: white;
+    }
+    td:first-child {
+      background-color: #2e0f00;
+      /* 温かいオレンジ系の色 */
+      color: white;
+    }
+    td:nth-child(2) {
+      font-weight: bold;
+    }
+
+    th,
+    td {
+      padding: 8px;
+      text-align: center;
+    }
+
+    .risk-high {
+      color: #7f0000;
+      /* 赤色 */
+      font-weight: bold;
+    }
+
+    .risk-normal {
+      color: #002100;
+      /* 緑 */
+      font-weight: normal;
+    }
+
+    .inner {
+      background-color: #ffcccc;
+      /* 薄い赤色 */
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+
+    .outer {
+      background-color: #e6ccff;
+      /* 薄い紫色 */
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+
+    #before-file-upload {
+      display: none;
+      /* animation: fadeIn 1s ease-in-out, slideIn 1s ease-in-out; */
+    }
+
+    @keyframes fadeIn {
+      0% {
+        opacity: 0;
+      }
+
+      100% {
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideIn {
+      0% {
+        transform: translateY(80px);
+      }
+
+      100% {
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+
+      #downloadButton {
+        width: 100%;
+        box-sizing: border-box;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <h1>MediaPipe Pose Knee Angle Estimator</h1>
+  <!-- 画像アップロード用 -->
+  <p>正面からの画像ファイルをアップロードしてください</p>
+  <input type="file" id="imageUpload" accept="image/*">
+  <section id="before-file-upload">
+    <!-- 画像とcanvasを表示するコンテナ -->
+    <div class="container" id="imageContainer"></div>
+
+    <!-- ダウンロードボタン -->
+    <br>
+    <a id="downloadButton" href="#" download="annotated_image.png">姿勢推定画像をダウンロード</a>
+
+    <!-- 下半身の拡大写真+推定pose -->
+    <br>
+    <div class="container" id="lowerBodyContainer">
+      <h2>下半身の拡大写真+推定pose</h2>
+    </div>
+    <h2>両</div>膝の角度</h2>
+    <p>FTAとは、大腿脛骨角（Femorotibial Angle）の略で、膝の内外反角度を示します。日本人の成人平均は約176°つまり4°の外反です。</p>
+    <p>180°を超えると内反、170°未満で外反となり、それぞれ内反型変形性膝関節症、外反型変形性膝関節症のリスクが高まります。</p>
+    <table>
+      <tr>
+        <th>Side</th>
+        <th>FTA (°)</th>
+        <th>Hip (x, y)</th>
+        <th>Knee (x, y)</th>
+        <th>Ankle (x, y)</th>
+      </tr>
+      <tr>
+        <td>Right</td>
+        <td id="rightFTA">-</td>
+        <td id="rightHip">-</td>
+        <td id="rightKnee">-</td>
+        <td id="rightAnkle">-</td>
+      </tr>
+      <tr>
+        <td>Left</td>
+        <td id="leftFTA">-</td>
+        <td id="leftHip">-</td>
+        <td id="leftKnee">-</td>
+        <td id="leftAnkle">-</td>
+      </tr>
+    </table>
+
+    <!-- リスク診断結果 -->
+    <h2>リスク診断結果</h2>
+    <table id="diagnosisTable">
+      <tr>
+        <th>Side</th>
+        <th>結果</th>
+      </tr>
+      <tr>
+        <td>Right</td>
+        <td id="rightDiagnosis">-</td>
+      </tr>
+      <tr>
+        <td>Left</td>
+        <td id="leftDiagnosis">-</td>
+      </tr>
+    </table>
+  </section>
+
+  <!-- MediaPipeとpose推定処理 -->
+  <script type="module">
+    import {
+      PoseLandmarker,
+      FilesetResolver,
+      DrawingUtils
+    } from "https://cdn.skypack.dev/@mediapipe/tasks-vision@0.10.0";
+
+    const imageUpload = document.getElementById('imageUpload');
+    const imageContainer = document.getElementById('imageContainer');
+    const downloadButton = document.getElementById('downloadButton');
+
+    let poseLandmarker;
+    const runningMode = "IMAGE";
+
+    // MediaPipeのPoseLandmarkerを非同期でロード
+    const createPoseLandmarker = async () => {
+      const vision = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
+      );
+      poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+          delegate: "GPU"
+        },
+        runningMode: runningMode,
+        numPoses: 2
+      });
+      console.log("PoseLandmarker loaded");
+    };
+    createPoseLandmarker();
+
+    // 画像アップロード時の処理
+    imageUpload.addEventListener('change', function (event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      // document.getElementById('before-file-upload').style.opacity = 1;
+      document.getElementById('before-file-upload').style.display = 'block';
+      document.getElementById('before-file-upload').style.animation = 'fadeIn 1s ease-in-out, slideIn 3s ease-in-out';
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        // コンテナをクリア
+        imageContainer.innerHTML = "";
+        // 画像要素を作成して表示
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.onload = () => {
+          // 画像の読み込みが完了したら、姿勢推定を実行
+          detectPose(img);
+        };
+        imageContainer.appendChild(img);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // 姿勢検出と描画、ダウンロードリンク作成の処理
+    async function detectPose(imgElement) {
+      if (!poseLandmarker) {
+        console.log("PoseLandmarker is not loaded yet!");
+        return;
+      }
+      // 画像のサイズに合わせたcanvasを作成
+      const canvas = document.createElement('canvas');
+      canvas.className = "canvas-overlay";
+      canvas.width = imgElement.naturalWidth;
+      canvas.height = imgElement.naturalHeight;
+      // 表示サイズに合わせる（画像のサイズに依存）
+      canvas.style.width = imgElement.width + "px";
+      canvas.style.height = imgElement.height + "px";
+      imageContainer.appendChild(canvas);
+      const canvasCtx = canvas.getContext('2d');
+      // 画像をcanvasに描画
+      canvasCtx.drawImage(imgElement, 0, 0, canvas.width, canvas.height);
+
+      // MediaPipeによる姿勢検出
+      poseLandmarker.detect(imgElement, (result) => {
+        const drawingUtils = new DrawingUtils(canvasCtx);
+
+        // 検出された全ての姿勢ランドマークについて描画
+        for (const landmark of result.landmarks) {
+          drawingUtils.drawLandmarks(landmark, {
+            radius: (data) => data.from ? DrawingUtils.lerp(data.from.z, -0.15, 0.1, 5, 1) : 1
+          });
+          drawingUtils.drawConnectors(landmark, PoseLandmarker.POSE_CONNECTIONS);
+        }
+        // 下半身の拡大写真+推定pose  [25] ~ [32]
+        const lowerBodyContainer = document.getElementById('lowerBodyContainer');
+        const estimatedPose = result.landmarks[0];
+        console.log("estimatedPose : ", estimatedPose);
+
+        const hipHeight = Math.min(estimatedPose[23].y, estimatedPose[24].y); // 上限
+        const heelHeight = Math.max(estimatedPose[29].y, estimatedPose[30].y); // 下限
+        const lowerBodyCanvas = document.createElement('canvas');
+        lowerBodyCanvas.width = canvas.width;
+        lowerBodyCanvas.height = canvas.height * (heelHeight - hipHeight);
+        lowerBodyCanvas.style.width = canvas.style.width;
+        lowerBodyCanvas.style.height = (imgElement.height * (heelHeight - hipHeight)) + "px";
+        lowerBodyContainer.appendChild(lowerBodyCanvas);
+        const lowerBodyCanvasCtx = lowerBodyCanvas.getContext('2d');
+        lowerBodyCanvasCtx.drawImage(imgElement, 0, hipHeight * canvas.height, canvas.width, (heelHeight - hipHeight) * canvas.height, 0, 0, canvas.width, (heelHeight - hipHeight) * canvas.height);
+        const lowerBodyDrawingUtils = new DrawingUtils(lowerBodyCanvasCtx);
+        const fixedEstimatedPose = estimatedPose.map((landmark) => {
+          return {
+            x: landmark.x,
+            y: (landmark.y - hipHeight) / (heelHeight - hipHeight),
+            z: landmark.z
+          };
+        });
+        lowerBodyDrawingUtils.drawLandmarks(fixedEstimatedPose.slice(25, 33), {
+          radius: 4 // 平面的な描画
+        });
+        // 両膝を大きめの円で描画
+        lowerBodyDrawingUtils.drawLandmarks([fixedEstimatedPose[25], fixedEstimatedPose[26]], {
+          radius: 15,
+          color: "red"
+        });
+        // ヒップラインの描画
+        lowerBodyDrawingUtils.drawConnectors([fixedEstimatedPose[23], fixedEstimatedPose[24]], PoseLandmarker.POSE_CONNECTIONS);
+        // 右脚の描画
+        lowerBodyDrawingUtils.drawConnectors([fixedEstimatedPose[24], fixedEstimatedPose[26]], PoseLandmarker.POSE_CONNECTIONS);
+        lowerBodyDrawingUtils.drawConnectors([fixedEstimatedPose[26], fixedEstimatedPose[28]], PoseLandmarker.POSE_CONNECTIONS);
+        lowerBodyDrawingUtils.drawConnectors([fixedEstimatedPose[28], fixedEstimatedPose[32]], PoseLandmarker.POSE_CONNECTIONS);
+        // [24]と[28]の線を赤色の点線で描画
+        lowerBodyDrawingUtils.drawConnectors([fixedEstimatedPose[24], fixedEstimatedPose[28]], PoseLandmarker.POSE_CONNECTIONS, {
+          color: "red",
+          lineWidth: 1,
+          lineType: "dotted"
+        });
+
+        // 左脚の描画
+        lowerBodyDrawingUtils.drawConnectors([fixedEstimatedPose[23], fixedEstimatedPose[25]], PoseLandmarker.POSE_CONNECTIONS);
+        lowerBodyDrawingUtils.drawConnectors([fixedEstimatedPose[25], fixedEstimatedPose[27]], PoseLandmarker.POSE_CONNECTIONS);
+        lowerBodyDrawingUtils.drawConnectors([fixedEstimatedPose[27], fixedEstimatedPose[31]], PoseLandmarker.POSE_CONNECTIONS);
+        // [23]と[27]の線を赤色の点線で描画
+        lowerBodyDrawingUtils.drawConnectors([fixedEstimatedPose[23], fixedEstimatedPose[27]], PoseLandmarker.POSE_CONNECTIONS, {
+          color: "red",
+          lineWidth: 1,
+          lineType: "dotted"
+        });
+        // 両膝の外側をオレンジで描画するための関数
+        const drawFanShape = (ctx, start, mid, end, color) => {
+          ctx.beginPath();
+          ctx.moveTo(start.x * lowerBodyCanvas.width, start.y * lowerBodyCanvas.height);
+          ctx.lineTo(mid.x * lowerBodyCanvas.width, mid.y * lowerBodyCanvas.height);
+          ctx.lineTo(end.x * lowerBodyCanvas.width, end.y * lowerBodyCanvas.height);
+          ctx.closePath();
+          ctx.fillStyle = color;
+          ctx.fill();
+        };
+
+        drawFanShape(lowerBodyCanvasCtx, fixedEstimatedPose[24], fixedEstimatedPose[26], fixedEstimatedPose[28], "orange");
+        drawFanShape(lowerBodyCanvasCtx, fixedEstimatedPose[23], fixedEstimatedPose[25], fixedEstimatedPose[27], "orange");
+
+        // 平面上でFTA(大腿脛骨角)を計算
+        const rightHip = fixedEstimatedPose[24];
+        const rightKnee = fixedEstimatedPose[26];
+        const rightAnkle = fixedEstimatedPose[28];
+        const leftHip = fixedEstimatedPose[23];
+        const leftKnee = fixedEstimatedPose[25];
+        const leftAnkle = fixedEstimatedPose[27];
+        const rightHipKneeVector = {
+          x: rightKnee.x - rightHip.x,
+          y: rightKnee.y - rightHip.y
+        };
+        const rightKneeAnkleVector = {
+          x: rightAnkle.x - rightKnee.x,
+          y: rightAnkle.y - rightKnee.y
+        };
+        const leftHipKneeVector = {
+          x: leftKnee.x - leftHip.x,
+          y: leftKnee.y - leftHip.y
+        };
+        const leftKneeAnkleVector = {
+          x: leftAnkle.x - leftKnee.x,
+          y: leftAnkle.y - leftKnee.y
+        };
+        const rightHipKneeVectorLength = Math.sqrt(rightHipKneeVector.x ** 2 + rightHipKneeVector.y ** 2);
+        const rightKneeAnkleVectorLength = Math.sqrt(rightKneeAnkleVector.x ** 2 + rightKneeAnkleVector.y ** 2);
+        const leftHipKneeVectorLength = Math.sqrt(leftHipKneeVector.x ** 2 + leftHipKneeVector.y ** 2);
+        const leftKneeAnkleVectorLength = Math.sqrt(leftKneeAnkleVector.x ** 2 + leftKneeAnkleVector.y ** 2);
+        const rightHipKneeAnkleAngle = Math.acos((rightHipKneeVector.x * rightKneeAnkleVector.x + rightHipKneeVector.y * rightKneeAnkleVector.y) / (rightHipKneeVectorLength * rightKneeAnkleVectorLength)) * 180 / Math.PI + 180;
+        const leftHipKneeAnkleAngle = Math.acos((leftHipKneeVector.x * leftKneeAnkleVector.x + leftHipKneeVector.y * leftKneeAnkleVector.y) / (leftHipKneeVectorLength * leftKneeAnkleVectorLength)) * 180 / Math.PI + 180;
+        console.log("rightHipKneeAnkleAngle : " + rightHipKneeAnkleAngle + "°");
+        console.log("leftHipKneeAnkleAngle : " + leftHipKneeAnkleAngle + "°");
+        document.getElementById('rightFTA').textContent = rightHipKneeAnkleAngle.toFixed(1);
+        document.getElementById('leftFTA').textContent = leftHipKneeAnkleAngle.toFixed(1);
+        document.getElementById('rightHip').textContent = `(${rightHip.x.toFixed(2)}, ${rightHip.y.toFixed(2)})`;
+        document.getElementById('rightKnee').textContent = `(${rightKnee.x.toFixed(2)}, ${rightKnee.y.toFixed(2)})`;
+        document.getElementById('rightAnkle').textContent = `(${rightAnkle.x.toFixed(2)}, ${rightAnkle.y.toFixed(2)})`;
+        document.getElementById('leftHip').textContent = `(${leftHip.x.toFixed(2)}, ${leftHip.y.toFixed(2)})`;
+        document.getElementById('leftKnee').textContent = `(${leftKnee.x.toFixed(2)}, ${leftKnee.y.toFixed(2)})`;
+        document.getElementById('leftAnkle').textContent = `(${leftAnkle.x.toFixed(2)}, ${leftAnkle.y.toFixed(2)})`;
+        // リスク診断結果の判定
+        const diagnoseRisk = (fta) => {
+          if (fta > 180) {
+            return "<span class='risk-high inner'>内反型変形性膝関節症のリスク</span>";
+          } else if (fta < 170) {
+            return "<span class='risk-high outer'>外反型変形性膝関節症のリスク</span>";
+          } else {
+            return "<span class='risk-normal'>正常範囲</span>";
+          }
+        };
+
+        const rightDiagnosis = diagnoseRisk(rightHipKneeAnkleAngle);
+        const leftDiagnosis = diagnoseRisk(leftHipKneeAnkleAngle);
+
+        document.getElementById('rightDiagnosis').innerHTML = rightDiagnosis;
+        document.getElementById('leftDiagnosis').innerHTML = leftDiagnosis;
+
+        // canvasの内容をBlob化し、ダウンロード用aタグのhrefに設定
+        canvas.toBlob(function (blob) {
+          const url = URL.createObjectURL(blob);
+          downloadButton.href = url;
+          // ボタンが機能するようになったらpulseアニメーションを発動
+          downloadButton.classList.add('pulse');
+        }, "image/png");
+      });
+    }
+  </script>
+</body>
+
+</html>
