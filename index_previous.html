@@ -3,7 +3,6 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MediaPipe Pose Knee Angle Estimator</title>
   <style>
     /* 全体の背景・フォント・中央揃え・レスポンシブ対応 */
@@ -119,19 +118,27 @@
 
     .risk-high {
       color: #7f0000;
-      background-color: #ffcccc;
       /* 赤色 */
       font-weight: bold;
-      padding: 4px;
-      border-radius: 4px;
     }
 
     .risk-normal {
       color: #002100;
-      background-color: #ccffcc;
       /* 緑 */
-      font-weight: bold;
-      padding: 4px;
+      font-weight: normal;
+    }
+
+    .inner {
+      background-color: #ffcccc;
+      /* 薄い赤色 */
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+
+    .outer {
+      background-color: #e6ccff;
+      /* 薄い紫色 */
+      padding: 2px 4px;
       border-radius: 4px;
     }
 
@@ -170,47 +177,11 @@
         box-sizing: border-box;
       }
     }
-
-    /* ヘッダー */
-    header {
-      background-color: #2e0f00;
-      /* 温かいオレンジ系の色 */
-      color: white;
-      margin: 0;
-      padding-bottom: 20px;
-      /* position: fixed;
-      top: 0;
-      left: 0; */
-      width: 100%;
-      z-index: 1000;
-      justify-content: space-between;
-      display: flex;
-      border-radius: 0 0 10px 10px;
-    }
-    .header h1 {
-      margin: 0 auto;
-    }
-    .hamburger-icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      margin-right: 10px;
-    }
   </style>
 </head>
 
 <body>
-  <header class="header">
-    <h1>MediaPipe Pose Knee Angle Estimator</h1>
-    <div class="hamburger-icon">
-      <svg width="30" height="30" viewBox="0 0 100 80" fill="white">
-        <rect width="100" height="10"></rect>
-        <rect y="30" width="100" height="10"></rect>
-        <rect y="60" width="100" height="10"></rect>
-      </svg>
-    </div>
-  </header>
+  <h1>MediaPipe Pose Knee Angle Estimator</h1>
   <!-- 画像アップロード用 -->
   <p>正面からの画像ファイルをアップロードしてください</p>
   <input type="file" id="imageUpload" accept="image/*">
@@ -225,28 +196,28 @@
     <!-- 下半身の拡大写真+推定pose -->
     <br>
     <div class="container" id="lowerBodyContainer">
-      <h2>膝周辺の拡大写真＋ポーズ推定</h2>
+      <h2>下半身の拡大写真+推定pose</h2>
     </div>
     <h2>両</div>膝の角度</h2>
     <p>FTAとは、大腿脛骨角（Femorotibial Angle）の略で、膝の内外反角度を示します。日本人の成人平均は約176°つまり4°の外反です。</p>
     <p>180°を超えると内反、170°未満で外反となり、それぞれ内反型変形性膝関節症、外反型変形性膝関節症のリスクが高まります。</p>
     <table>
       <tr>
-        <th>左右</th>
+        <th>Side</th>
         <th>FTA (°)</th>
         <th>Hip (x, y)</th>
         <th>Knee (x, y)</th>
         <th>Ankle (x, y)</th>
       </tr>
       <tr>
-        <td>右</td>
+        <td>Right</td>
         <td id="rightFTA">-</td>
         <td id="rightHip">-</td>
         <td id="rightKnee">-</td>
         <td id="rightAnkle">-</td>
       </tr>
       <tr>
-        <td>左</td>
+        <td>Left</td>
         <td id="leftFTA">-</td>
         <td id="leftHip">-</td>
         <td id="leftKnee">-</td>
@@ -258,60 +229,18 @@
     <h2>リスク診断結果</h2>
     <table id="diagnosisTable">
       <tr>
-        <th>左右</th>
+        <th>Side</th>
         <th>結果</th>
       </tr>
       <tr>
-        <td>右</td>
+        <td>Right</td>
         <td id="rightDiagnosis">-</td>
       </tr>
       <tr>
-        <td>左</td>
+        <td>Left</td>
         <td id="leftDiagnosis">-</td>
       </tr>
     </table>
-
-    <h2>Mikulicz線について</h2>
-    <p>また、Mikulicz線と呼ばれる、下肢機能軸が膝関節を通過するかどうかも、膝のリスク診断に重要です。<br>これは大腿骨頭中心と足関節中心を結ぶ線で、立位での下肢負荷線を示します。<br>膝の直径は統計学的調査により、以下の式に近似することがわかっています。</p>
-    <p>大腿骨長 (mm) ＝ 5.12 × 膝直径 (mm) ＋ 65.5 （Krishan et al., 2010）</p>
-    <p>さらに日本人の大腿骨長は約400mm前後であることから、膝の直径は大腿骨長の約1/6と推定されます。</p>
-    <p>今回はここから膝の直径を推定し、Mikulicz線が膝関節を通過するかどうかを調べます。<br>詳しく知りたい場合は、自分で計測してみるか、専門家に相談してみましょう。</p>
-    <table>
-      <tr>
-        <th>左右</th>
-        <th>大腿骨長</th>
-        <th>膝直径</th>
-        <th>膝と線の最短距離</th>
-      </tr>
-      <tr>
-        <td>右</td>
-        <td id="rightFemurLength">-</td>
-        <td id="rightKneeDiameter">-</td>
-        <td id="rightKneeDistance">-</td>
-      </tr>
-      <tr>
-        <td>左</td>
-        <td id="leftFemurLength">-</td>
-        <td id="leftKneeDiameter">-</td>
-        <td id="leftKneeDistance">-</td>
-      </tr>
-    </table>
-    <p>単位は写真に対する割合（０〜１）</p>
-
-    <!-- リスク判定　優秀 or 注意 -->
-     <table>
-      <tr>
-        <th>左右</th>
-        <th>Mikulicz線(下肢荷重線)との関係</th>
-      </tr>
-      <tr>
-        <td>右</td>
-        <td id="rightMikuliczEvaluation">-</td>
-      </tr>
-      <tr>
-        <td>左</td>
-        <td id="leftMikuliczEvaluation">-</td>
-      </tr>
   </section>
 
   <!-- MediaPipeとpose推定処理 -->
@@ -344,18 +273,7 @@
       });
       console.log("PoseLandmarker loaded");
     };
-    // 画像アップロードボタンを無効化し、ロード中のメッセージを表示
-    imageUpload.disabled = true;
-    const loadingMessage = document.createElement('p');
-    loadingMessage.id = 'loadingMessage';
-    loadingMessage.textContent = '姿勢推定AIモデルをロード中です。しばらくお待ちください...';
-    document.body.insertBefore(loadingMessage, imageUpload);
-
-    await createPoseLandmarker();
-
-    // モデルのロードが完了したら、画像アップロードボタンを有効化し、メッセージを削除
-    imageUpload.disabled = false;
-    document.body.removeChild(loadingMessage);
+    createPoseLandmarker();
 
     // 画像アップロード時の処理
     imageUpload.addEventListener('change', function (event) {
@@ -520,11 +438,11 @@
         // リスク診断結果の判定
         const diagnoseRisk = (fta) => {
           if (fta > 180) {
-            return "<span class='risk-high'>内反型変形性膝関節症のリスク</span>";
+            return "<span class='risk-high inner'>内反型変形性膝関節症のリスク</span>";
           } else if (fta < 170) {
-            return "<span class='risk-high'>外反型変形性膝関節症のリスク</span>";
+            return "<span class='risk-high outer'>外反型変形性膝関節症のリスク</span>";
           } else {
-            return "<span class='risk-normal'>☆*:.｡.良好.｡.:*☆</span>";
+            return "<span class='risk-normal'>正常範囲</span>";
           }
         };
 
@@ -533,39 +451,6 @@
 
         document.getElementById('rightDiagnosis').innerHTML = rightDiagnosis;
         document.getElementById('leftDiagnosis').innerHTML = leftDiagnosis;
-
-        // 大腿骨長の計算 単位はPoseLandmarkerのlandmarks（割合）をそのまま使う XY平面上で
-        const rightFemurLength = Math.sqrt((rightHip.x - rightKnee.x) ** 2 + (rightHip.y - rightKnee.y) ** 2);
-        const leftFemurLength = Math.sqrt((leftHip.x - leftKnee.x) ** 2 + (leftHip.y - leftKnee.y) ** 2);
-        document.getElementById('rightFemurLength').textContent = rightFemurLength.toFixed(2);
-        document.getElementById('leftFemurLength').textContent = leftFemurLength.toFixed(2);
-        // 膝の直径の推定（大腿骨長の約1/6）
-        const rightKneeDiameter = rightFemurLength / 6;
-        const leftKneeDiameter = leftFemurLength / 6;
-        document.getElementById('rightKneeDiameter').textContent = rightKneeDiameter.toFixed(2);
-        document.getElementById('leftKneeDiameter').textContent = leftKneeDiameter.toFixed(2);
-        // Mikulicz線と膝の最短距離の計算
-        const rightKneeDistance = Math.abs((rightHip.y - rightKnee.y) * rightAnkle.x - (rightHip.x - rightKnee.x) * rightAnkle.y + rightHip.x * rightKnee.y - rightHip.y * rightKnee.x) / rightFemurLength;
-        const leftKneeDistance = Math.abs((leftHip.y - leftKnee.y) * leftAnkle.x - (leftHip.x - leftKnee.x) * leftAnkle.y + leftHip.x * leftKnee.y - leftHip.y * leftKnee.x) / leftFemurLength;
-        document.getElementById('rightKneeDistance').textContent = rightKneeDistance.toFixed(2);
-        document.getElementById('leftKneeDistance').textContent = leftKneeDistance.toFixed(2);
-        // Mikulicz線との関係の判定
-        const evaluateMikulicz = (diameter, distance) => {
-          // 膝の直径よりKneeDistanceが大きいと注意が必要
-          if (diameter > distance) {
-            return "<span class='risk-normal'>関節内を通過 ☆*:.｡.良好.｡.:*☆</span>";
-          } else {
-            return "<span class='risk-high'>関節外を通過 注意</span>";
-        };
-      }
-        // 膝の直径よりKneeDistanceが大きいと注意が必要
-        const rightMikuliczEvaluation = evaluateMikulicz(rightKneeDiameter, rightKneeDistance);
-        const leftMikuliczEvaluation = evaluateMikulicz(leftKneeDiameter, leftKneeDistance);
-        document.getElementById('rightMikuliczEvaluation').innerHTML = rightMikuliczEvaluation;
-        document.getElementById('leftMikuliczEvaluation').innerHTML = leftMikuliczEvaluation;
-
-
-
 
         // canvasの内容をBlob化し、ダウンロード用aタグのhrefに設定
         canvas.toBlob(function (blob) {
