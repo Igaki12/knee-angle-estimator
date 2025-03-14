@@ -254,6 +254,16 @@
       </tr>
     </table>
 
+    <p>本来の大腿骨の位置と、姿勢推定するターゲットに若干の差があるため、少し補正を加えます。</p>
+    <table>
+      <tr>
+        <th>現在の補正値( °)</th>
+      </tr>
+      <tr>
+        <td id="correctionAngle">5</td>
+      </tr>
+    </table>
+
     <!-- リスク診断結果 -->
     <h2>リスク診断結果</h2>
     <table id="diagnosisTable">
@@ -517,6 +527,10 @@
         document.getElementById('leftHip').textContent = `(${leftHip.x.toFixed(2)}, ${leftHip.y.toFixed(2)})`;
         document.getElementById('leftKnee').textContent = `(${leftKnee.x.toFixed(2)}, ${leftKnee.y.toFixed(2)})`;
         document.getElementById('leftAnkle').textContent = `(${leftAnkle.x.toFixed(2)}, ${leftAnkle.y.toFixed(2)})`;
+        // correctionAngleの取得
+        const correctionAngle = parseInt(document.getElementById('correctionAngle').textContent) || 0;
+        const rightHipKneeAnkleAngleCorrected = rightHipKneeAnkleAngle - correctionAngle;
+        const leftHipKneeAnkleAngleCorrected = leftHipKneeAnkleAngle - correctionAngle;
         // リスク診断結果の判定
         const diagnoseRisk = (fta) => {
           if (fta > 180) {
@@ -528,8 +542,8 @@
           }
         };
 
-        const rightDiagnosis = diagnoseRisk(rightHipKneeAnkleAngle);
-        const leftDiagnosis = diagnoseRisk(leftHipKneeAnkleAngle);
+        const rightDiagnosis = diagnoseRisk(rightHipKneeAnkleAngleCorrected);
+        const leftDiagnosis = diagnoseRisk(leftHipKneeAnkleAngleCorrected);
 
         document.getElementById('rightDiagnosis').innerHTML = rightDiagnosis;
         document.getElementById('leftDiagnosis').innerHTML = leftDiagnosis;
