@@ -254,12 +254,14 @@
       </tr>
     </table>
 
-    <p>本来の大腿骨の位置と、姿勢推定するターゲットに若干の差があるため、少し補正を加えます。</p>
+    <p>本来の大腿骨の位置と、姿勢推定するターゲットに若干の差があるため、少し補正を加えています。</p>
     <table>
       <tr>
+        <th></th>
         <th>現在の補正値( °)</th>
       </tr>
       <tr>
+        <td></td>
         <td id="correctionAngle">5</td>
       </tr>
     </table>
@@ -519,8 +521,8 @@
         const leftHipKneeAnkleAngle = Math.acos((leftHipKneeVector.x * leftKneeAnkleVector.x + leftHipKneeVector.y * leftKneeAnkleVector.y) / (leftHipKneeVectorLength * leftKneeAnkleVectorLength)) * 180 / Math.PI + 180;
         console.log("rightHipKneeAnkleAngle : " + rightHipKneeAnkleAngle + "°");
         console.log("leftHipKneeAnkleAngle : " + leftHipKneeAnkleAngle + "°");
-        document.getElementById('rightFTA').textContent = rightHipKneeAnkleAngle.toFixed(1);
-        document.getElementById('leftFTA').textContent = leftHipKneeAnkleAngle.toFixed(1);
+        // document.getElementById('rightFTA').textContent = rightHipKneeAnkleAngle.toFixed(1);
+        // document.getElementById('leftFTA').textContent = leftHipKneeAnkleAngle.toFixed(1);
         document.getElementById('rightHip').textContent = `(${rightHip.x.toFixed(2)}, ${rightHip.y.toFixed(2)})`;
         document.getElementById('rightKnee').textContent = `(${rightKnee.x.toFixed(2)}, ${rightKnee.y.toFixed(2)})`;
         document.getElementById('rightAnkle').textContent = `(${rightAnkle.x.toFixed(2)}, ${rightAnkle.y.toFixed(2)})`;
@@ -531,6 +533,8 @@
         const correctionAngle = parseInt(document.getElementById('correctionAngle').textContent) || 0;
         const rightHipKneeAnkleAngleCorrected = rightHipKneeAnkleAngle - correctionAngle;
         const leftHipKneeAnkleAngleCorrected = leftHipKneeAnkleAngle - correctionAngle;
+        document.getElementById('rightFTA').textContent = rightHipKneeAnkleAngleCorrected.toFixed(1);
+        document.getElementById('leftFTA').textContent = leftHipKneeAnkleAngleCorrected.toFixed(1);
         // リスク診断結果の判定
         const diagnoseRisk = (fta) => {
           if (fta > 180) {
@@ -566,7 +570,7 @@
         // Mikulicz線との関係の判定
         const evaluateMikulicz = (diameter, distance) => {
           // 膝の直径よりKneeDistanceが大きいと注意が必要
-          if (diameter > distance) {
+          if (diameter > distance * 2) {
             return "<span class='risk-normal'>関節内を通過 ☆*:.｡.良好.｡.:*☆</span>";
           } else {
             return "<span class='risk-high'>関節外を通過 注意</span>";
