@@ -1,0 +1,20 @@
+{
+    "name": "膝リスクチェッカー",
+    "short_name": "膝リスク",
+    "start_url": "/knee-angle-estimator/index.html",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#ffffff",
+    "icons": [
+      {
+        "src": "/icon_knee_780x780.png",
+        "sizes": "192x192",
+        "type": "image/png"
+      },
+      {
+        "src": "/icon_knee_780x780.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ]
+  }
